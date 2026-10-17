@@ -1,0 +1,206 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "windows-forensics/schemas/mft.schema.json",
+  "title": "MFT FILE record (one JSON object per JSONL line, mft_parse.py output)",
+  "type": "object",
+  "required": [
+    "tool",
+    "schema_version",
+    "artifact",
+    "record_number",
+    "record_offset",
+    "in_use",
+    "is_directory",
+    "is_extension",
+    "sequence_number",
+    "hard_link_count",
+    "file_reference",
+    "used_size",
+    "allocated_record_size",
+    "attribute_list",
+    "attributes",
+    "primary_name",
+    "size",
+    "file_names",
+    "timestomp_flags",
+    "warnings"
+  ],
+  "properties": {
+    "tool": { "const": "mft_parse" },
+    "schema_version": { "const": 1 },
+    "artifact": { "const": "mft" },
+    "record_number": { "type": "integer", "minimum": 0 },
+    "record_offset": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "byte offset of the record in the capture"
+    },
+    "in_use": { "type": "boolean", "description": "header flag 0x01; false = deleted record (see references/mft.md section 9)" },
+    "is_directory": { "type": "boolean" },
+    "is_extension": { "type": "boolean", "description": "header flag 0x04; treat with caution (see card)" },
+    "has_special_index": { "type": "boolean" },
+    "flags": { "type": "integer", "minimum": 0 },
+    "sequence_number": { "type": "integer", "minimum": 0, "maximum": 65535 },
+    "hard_link_count": { "type": "integer", "minimum": 0 },
+    "file_reference": {
+      "type": "string",
+      "pattern": "^0x[0-9a-f]{16}$",
+      "description": "sequence high 16 bits | record index low 48 bits"
+    },
+    "lsn": { "type": "integer", "minimum": 0 },
+    "used_size": { "type": "integer", "minimum": 0 },
+    "allocated_record_size": { "type": "integer", "minimum": 0 },
+    "base_record_reference": {
+      "type": ["string", "null"],
+      "pattern": "^0x[0-9a-f]{16}$",
+      "description": "null for base records; set for extension records"
+    },
+    "next_attribute_id": { "type": "integer", "minimum": 0 },
+    "has_attribute_list": { "type": "boolean" },
+    "attribute_list": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["type", "type_name", "starting_vcn", "base_reference", "attribute_id"],
+        "properties": {
+          "type": { "type": "integer" },
+          "type_name": { "type": "string" },
+          "starting_vcn": { "type": "integer" },
+          "base_reference": { "type": "string", "pattern": "^0x[0-9a-f]{16}$" },
+          "attribute_id": { "type": "integer" }
+        }
+      }
+    },
+    "attributes": {
+      "type": "array",
+      "description": "attribute inventory in on-disk order",
+      "items": {
+        "type": "object",
+        "required": ["type", "type_name", "non_resident", "id", "flags", "length", "name"],
+        "properties": {
+          "type": { "type": "integer" },
+          "type_name": { "type": "string" },
+          "non_resident": { "type": "boolean" },
+          "id": { "type": "integer" },
+          "flags": { "type": "integer" },
+          "length": { "type": "integer" },
+          "name": { "type": ["string", "null"] },
+          "value_length": { "type": "integer" },
+          "starting_vcn": { "type": "integer" },
+          "last_vcn": { "type": "integer" }
+        }
+      }
+    },
+    "standard_information": {
+      "type": "object",
+      "required": ["created", "modified", "mft_modified", "accessed", "dos_flags", "value_length"],
+      "properties": {
+        "created": { "type": ["string", "null"] },
+        "created_filetime": { "type": "integer" },
+        "modified": { "type": ["string", "null"] },
+        "modified_filetime": { "type": "integer" },
+        "mft_modified": { "type": ["string", "null"] },
+        "mft_modified_filetime": { "type": "integer" },
+        "accessed": { "type": ["string", "null"] },
+        "accessed_filetime": { "type": "integer" },
+        "dos_flags": { "type": "integer" },
+        "value_length": { "type": "integer" },
+        "owner_id": { "type": "integer" },
+        "security_id": { "type": "integer" },
+        "quota_charged": { "type": "integer" },
+        "last_usn": { "type": "integer", "description": "last USN of this file in $UsnJrnl (0 = journal disabled)" }
+      }
+    },
+    "primary_name": { "type": ["string", "null"], "description": "name chosen by namespace preference Win32&DOS > Win32 > POSIX > DOS" },
+    "size": {
+      "type": ["integer", "null"],
+      "description": "primary $FN real size, else unnamed $DATA real size, else null (best-effort convenience field)"
+    },
+    "file_names": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["parent_reference", "namespace", "name"],
+        "properties": {
+          "parent_reference": { "type": "string", "pattern": "^0x[0-9a-f]{16}$" },
+          "created": { "type": ["string", "null"] },
+          "created_filetime": { "type": "integer" },
+          "modified": { "type": ["string", "null"] },
+          "modified_filetime": { "type": "integer" },
+          "mft_modified": { "type": ["string", "null"] },
+          "mft_modified_filetime": { "type": "integer" },
+          "accessed": { "type": ["string", "null"] },
+          "accessed_filetime": { "type": "integer" },
+          "allocated_size": { "type": "integer" },
+          "real_size": { "type": "integer" },
+          "flags": { "type": "integer" },
+          "namespace": { "type": "integer", "minimum": 0, "maximum": 3 },
+          "namespace_name": { "type": "string" },
+          "name": { "type": "string" }
+        }
+      }
+    },
+    "data": {
+      "type": "array",
+      "description": "$DATA attributes (unnamed stream and named streams)",
+      "items": {
+        "type": "object",
+        "required": ["name", "non_resident", "size"],
+        "properties": {
+          "name": { "type": ["string", "null"] },
+          "non_resident": { "type": "boolean" },
+          "size": { "type": "integer" },
+          "allocated_size": { "type": "integer" },
+          "initialized_size": { "type": "integer" },
+          "compression_unit": { "type": "integer" },
+          "run_count": { "type": "integer" },
+          "first_lcn": { "type": ["integer", "null"] },
+          "fragmented": { "type": "boolean" }
+        }
+      }
+    },
+    "timestomp_flags": {
+      "type": "array",
+      "uniqueItems": true,
+      "description": "observations, not verdicts — see references/mft.md section 10",
+      "items": {
+        "enum": [
+          "si_timestamps_zero",
+          "si_whole_second_precision",
+          "si_created_before_fn_created"
+        ]
+      }
+    },
+    "warnings": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "usa_invalid",
+          "usa_unusual_sector_size",
+          "usa_mismatch",
+          "first_attribute_offset_invalid",
+          "used_size_out_of_range",
+          "attribute_walk_aborted",
+          "attribute_count_limit_reached",
+          "attribute_name_out_of_range",
+          "attribute_value_out_of_range",
+          "multiple_standard_information",
+          "standard_information_too_short",
+          "file_name_too_short",
+          "file_name_truncated",
+          "attribute_list_entry_out_of_range",
+          "attribute_list_non_resident",
+          "runlist_truncated",
+          "runlist_too_long",
+          "runlist_terminator_missing"
+        ]
+      }
+    },
+    "raw_hex": {
+      "type": "string",
+      "pattern": "^[0-9a-f]+$",
+      "description": "--raw mode only: full record bytes as read from the capture (before USA fixup)"
+    }
+  }
+}

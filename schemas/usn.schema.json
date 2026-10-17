@@ -1,0 +1,183 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "windows-forensics/schemas/usn.schema.json",
+  "title": "USN journal record (one JSON object per JSONL line, usn_parse.py output)",
+  "type": "object",
+  "required": [
+    "tool",
+    "schema_version",
+    "artifact",
+    "version",
+    "minor_version",
+    "usn",
+    "file_reference",
+    "parent_file_reference",
+    "reason_mask",
+    "reason_flags",
+    "reason_unknown_mask",
+    "source_info_mask",
+    "source_flags",
+    "source_unknown_mask",
+    "warnings"
+  ],
+  "properties": {
+    "tool": { "const": "usn_parse" },
+    "schema_version": { "const": 1 },
+    "artifact": { "const": "usn" },
+    "version": { "type": "integer", "enum": [2, 3, 4] },
+    "minor_version": { "type": "integer", "minimum": 0 },
+    "record_offset": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "byte offset of the record in the capture (offline mode only)"
+    },
+    "usn": { "type": "integer", "minimum": 0 },
+    "file_reference": {
+      "type": "string",
+      "pattern": "^0x([0-9a-f]{16}|[0-9a-f]{32})$",
+      "description": "full file reference number, hex, zero-padded (64-bit for v2, 128-bit for v3/v4)"
+    },
+    "parent_file_reference": {
+      "type": "string",
+      "pattern": "^0x([0-9a-f]{16}|[0-9a-f]{32})$"
+    },
+    "timestamp": {
+      "type": ["string", "null"],
+      "description": "UTC ISO 8601 with microseconds; null when FILETIME is 0 or unrepresentable"
+    },
+    "timestamp_filetime": { "type": "integer", "minimum": 0 },
+    "reason_mask": { "type": "integer", "minimum": 0 },
+    "reason_flags": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "DATA_OVERWRITE",
+          "DATA_EXTEND",
+          "DATA_TRUNCATION",
+          "NAMED_DATA_OVERWRITE",
+          "NAMED_DATA_EXTEND",
+          "NAMED_DATA_TRUNCATION",
+          "FILE_CREATE",
+          "FILE_DELETE",
+          "EA_CHANGE",
+          "SECURITY_CHANGE",
+          "RENAME_OLD_NAME",
+          "RENAME_NEW_NAME",
+          "INDEXABLE_CHANGE",
+          "BASIC_INFO_CHANGE",
+          "HARD_LINK_CHANGE",
+          "COMPRESSION_CHANGE",
+          "ENCRYPTION_CHANGE",
+          "OBJECT_ID_CHANGE",
+          "REPARSE_POINT_CHANGE",
+          "STREAM_CHANGE",
+          "TRANSACTED_CHANGE",
+          "INTEGRITY_CHANGE",
+          "CLOSE"
+        ]
+      }
+    },
+    "reason_unknown_mask": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "reserved/unknown reason bits set in the record"
+    },
+    "source_info_mask": { "type": "integer", "minimum": 0 },
+    "source_flags": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "DATA_MANAGEMENT",
+          "AUXILIARY_DATA",
+          "REPLICATION_MANAGEMENT",
+          "CLIENT_REPLICATION_MANAGEMENT"
+        ]
+      }
+    },
+    "source_unknown_mask": { "type": "integer", "minimum": 0 },
+    "security_id": { "type": "integer", "minimum": 0 },
+    "file_attributes": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "FILE_ATTRIBUTE_* bitmask (0x10 = directory)"
+    },
+    "name": { "type": "string", "description": "file name at the time of this record" },
+    "remaining_extents": { "type": "integer", "minimum": 0 },
+    "extent_count": { "type": "integer", "minimum": 0 },
+    "extent_size": { "type": "integer", "minimum": 0 },
+    "extents": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["offset", "length"],
+        "properties": {
+          "offset": { "type": "integer" },
+          "length": { "type": "integer" }
+        }
+      }
+    },
+    "warnings": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "unknown_minor_version",
+          "timestamp_out_of_range",
+          "odd_name_length",
+          "lossy_name",
+          "unknown_reason_bits",
+          "unknown_source_bits",
+          "unexpected_extent_size"
+        ]
+      }
+    },
+    "raw_hex": {
+      "type": "string",
+      "pattern": "^[0-9a-f]+$",
+      "description": "--raw mode only: full record bytes"
+    }
+  },
+  "allOf": [
+    {
+      "if": { "required": ["version"], "properties": { "version": { "const": 2 } } },
+      "then": {
+        "required": ["timestamp", "timestamp_filetime", "security_id", "file_attributes", "name"],
+        "properties": {
+          "file_reference": { "pattern": "^0x[0-9a-f]{16}$" },
+          "parent_file_reference": { "pattern": "^0x[0-9a-f]{16}$" }
+        }
+      }
+    },
+    {
+      "if": { "required": ["version"], "properties": { "version": { "const": 3 } } },
+      "then": {
+        "required": ["timestamp", "timestamp_filetime", "security_id", "file_attributes", "name"],
+        "properties": {
+          "file_reference": { "pattern": "^0x[0-9a-f]{32}$" },
+          "parent_file_reference": { "pattern": "^0x[0-9a-f]{32}$" }
+        }
+      }
+    },
+    {
+      "if": { "required": ["version"], "properties": { "version": { "const": 4 } } },
+      "then": {
+        "required": ["remaining_extents", "extent_count", "extent_size", "extents"],
+        "not": {
+          "anyOf": [
+            { "required": ["name"] },
+            { "required": ["timestamp"] },
+            { "required": ["timestamp_filetime"] },
+            { "required": ["security_id"] },
+            { "required": ["file_attributes"] }
+          ]
+        },
+        "properties": {
+          "file_reference": { "pattern": "^0x[0-9a-f]{32}$" },
+          "parent_file_reference": { "pattern": "^0x[0-9a-f]{32}$" }
+        }
+      }
+    }
+  ]
+}

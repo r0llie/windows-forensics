@@ -1,0 +1,36 @@
+# Python-generated files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments and local tooling
+.venv/
+venv/
+.env
+.env.*
+!.env.example
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Local forensic evidence and generated analysis outputs
+case_*/
+case-live/
+cases/
+captures/
+evidence/
+private/
+**/raw_evidence/
+**/case_live/
+**/case_mini/
+*.evtx
+*.hve
+*.pf
+*.mft
+*.usn
+*.bin
+*.jsonl
+parse/
+validate/
+timeline.jsonl
+case_story*.md

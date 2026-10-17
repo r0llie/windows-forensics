@@ -1,0 +1,157 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "windows-forensics/schemas/collect_manifest.schema.json",
+  "title": "Case collection manifest (collect.py manifest.json)",
+  "type": "object",
+  "required": [
+    "tool",
+    "tool_version",
+    "schema_version",
+    "case",
+    "volume",
+    "elevated",
+    "started_at",
+    "finished_at",
+    "machine",
+    "params",
+    "steps",
+    "files",
+    "counts",
+    "notes",
+    "errors",
+    "warnings"
+  ],
+  "properties": {
+    "tool": { "const": "collect" },
+    "tool_version": { "type": "string" },
+    "schema_version": { "const": 1 },
+    "case": {
+      "type": "string",
+      "description": "basename of the case directory"
+    },
+    "volume": {
+      "type": "string",
+      "pattern": "^[A-Za-z]:$",
+      "description": "volume the raw artifacts ($MFT, USN journal) were read from"
+    },
+    "elevated": {
+      "type": "boolean",
+      "description": "whether the collector ran with admin rights"
+    },
+    "started_at": { "type": "string" },
+    "finished_at": { "type": "string" },
+    "machine": {
+      "type": "object",
+      "description": "machine_info.json contents (OS/volume snapshot); schema not pinned here"
+    },
+    "params": {
+      "type": "object",
+      "required": ["channels", "with_epl", "mft_max_bytes", "prefetch_dir", "no_hash", "skips"],
+      "properties": {
+        "channels": {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 1
+        },
+        "with_epl": { "type": "boolean" },
+        "mft_max_bytes": { "type": ["integer", "null"], "minimum": 1 },
+        "prefetch_dir": { "type": "string" },
+        "no_hash": { "type": "boolean" },
+        "skips": {
+          "type": "object",
+          "required": ["registry", "prefetch", "evtx", "mft", "usn"],
+          "properties": {
+            "registry": { "type": "boolean" },
+            "prefetch": { "type": "boolean" },
+            "evtx": { "type": "boolean" },
+            "mft": { "type": "boolean" },
+            "usn": { "type": "boolean" }
+          }
+        }
+      }
+    },
+    "steps": {
+      "type": "array",
+      "minItems": 6,
+      "items": {
+        "type": "object",
+        "required": ["step", "status", "started_at", "finished_at", "notes"],
+        "properties": {
+          "step": { "type": "string", "enum": ["machine_info", "registry", "prefetch", "evtx", "mft", "usn"] },
+        "status": { "type": "string", "enum": ["ok", "failed", "skipped", "partial"] },
+        "started_at": { "type": "string", "format": "date-time" },
+        "finished_at": { "type": "string", "format": "date-time" },
+          "reason": {
+            "type": "string",
+            "description": "present when status=skipped: 'requested (--skip flag)' or 'not elevated'"
+          },
+          "error": {
+            "type": "string",
+            "description": "present when status=failed; partial-step details are listed in errors[]"
+          },
+          "notes": {
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        }
+      }
+    },
+    "files": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["path", "size", "sha256", "step", "source"],
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "path relative to the case directory, using forward slashes"
+          },
+          "size": { "type": ["integer", "null"], "minimum": 0 },
+          "sha256": {
+            "type": ["string", "null"],
+            "pattern": "^[0-9a-f]{64}$",
+            "description": "null when --no-hash was used (also flagged in warnings)"
+          },
+          "step": { "type": "string", "enum": ["machine_info", "registry", "prefetch", "evtx", "mft", "usn"] },
+          "source": {
+            "type": "string",
+            "description": "origin of the file: registry key path, original prefetch path, wevtutil command, volume path"
+          }
+        }
+      }
+    },
+    "counts": {
+      "type": "object",
+      "required": ["files", "bytes", "by_step"],
+      "properties": {
+        "files": { "type": "integer", "minimum": 0 },
+        "bytes": { "type": "integer", "minimum": 0 },
+        "by_step": {
+          "type": "object",
+          "additionalProperties": { "type": "integer", "minimum": 0 }
+        }
+      }
+    },
+    "notes": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "errors": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["step", "error"],
+        "properties": {
+          "step": { "type": "string" },
+          "channel": { "type": "string" },
+          "error": { "type": "string" }
+        }
+      }
+    },
+    "warnings": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "known values include not_elevated, hashes_skipped, mft_truncated_by_max_bytes"
+    }
+  }
+}

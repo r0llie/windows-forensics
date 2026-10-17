@@ -1,0 +1,202 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "windows-forensics/schemas/pf.schema.json",
+  "title": "Prefetch file record (one JSON object per JSONL line, pf_parse.py output)",
+  "type": "object",
+  "required": [
+    "tool",
+    "schema_version",
+    "artifact",
+    "source_path",
+    "source_sha256",
+    "source_size",
+    "container",
+    "decompressed_size",
+    "decompressed_sha256",
+    "format_version",
+    "signature",
+    "executable",
+    "prefetch_hash",
+    "flags",
+    "is_boot_prefetch",
+    "filename",
+    "hash_matches_filename",
+    "exe_matches_filename",
+    "unknown_string",
+    "file_information",
+    "run_count",
+    "run_times_filetime",
+    "run_times",
+    "last_run_time",
+    "metrics",
+    "trace_chains",
+    "volumes",
+    "warnings"
+  ],
+  "properties": {
+    "tool": { "const": "pf_parse" },
+    "schema_version": { "const": 1 },
+    "artifact": { "const": "pf" },
+    "source_path": { "type": "string" },
+    "source_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "source_size": { "type": "integer", "minimum": 1 },
+    "container": {
+      "enum": ["raw_scca", "mam_xpress_huffman"],
+      "description": "mam_xpress_huffman: Windows 10+ MAM container holding an XPRESS-Huffman stream; raw_scca: plain SCCA file"
+    },
+    "decompressed_size": { "type": "integer", "minimum": 0 },
+    "decompressed_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "declared_uncompressed_size": {
+      "type": ["integer", "null"],
+      "description": "size declared in the MAM header (null for raw_scca files); cross-checked against decompressed_size"
+    },
+    "format_version": { "enum": [17, 23, 26, 30, 31] },
+    "signature": { "const": "SCCA" },
+    "unknown_0x08": { "type": "integer", "minimum": 0 },
+    "header_file_size": { "type": "integer", "minimum": 0 },
+    "executable": {
+      "type": "string",
+      "description": "executable name from the 60-byte UTF-16 header field (trailing NULs stripped)"
+    },
+    "prefetch_hash": {
+      "type": "string",
+      "pattern": "^[0-9A-F]{8}$",
+      "description": "hash stored in the file header (compared against the filename hash by the observations, never trusted alone)"
+    },
+    "flags": { "type": "integer", "minimum": 0 },
+    "is_boot_prefetch": { "type": "boolean" },
+    "filename": { "type": "string" },
+    "filename_executable": { "type": ["string", "null"] },
+    "filename_hash": { "type": ["string", "null"], "pattern": "^[0-9A-F]{8}$" },
+    "filename_hash_suffix": { "type": ["string", "null"] },
+    "hash_matches_filename": { "type": ["boolean", "null"] },
+    "exe_matches_filename": { "type": ["boolean", "null"] },
+    "unknown_string": {
+      "type": ["string", "null"],
+      "description": "string at the v30 file-information 'hash string' offset/size (libscca name; TODO rename there). Observed on Windows 11 (v30 variant 2) to contain the full \\DEVICE\\... path of the executable, or a package family name (e.g. UWP apps). NOT related to prefetch_hash - do not compare"
+    },
+    "file_information": {
+      "type": "object",
+      "required": [
+        "file_information_offset",
+        "metrics_offset",
+        "metrics_count",
+        "trace_chains_offset",
+        "trace_chains_count",
+        "filename_strings_offset",
+        "filename_strings_size",
+        "volumes_offset",
+        "volumes_count",
+        "volumes_size",
+        "layout_variant",
+        "run_count"
+      ],
+      "properties": {
+        "file_information_offset": { "const": 84 },
+        "metrics_offset": { "type": "integer", "minimum": 0 },
+        "metrics_count": { "type": "integer", "minimum": 0 },
+        "trace_chains_offset": { "type": "integer", "minimum": 0 },
+        "trace_chains_count": { "type": "integer", "minimum": 0 },
+        "filename_strings_offset": { "type": "integer", "minimum": 0 },
+        "filename_strings_size": { "type": "integer", "minimum": 0 },
+        "volumes_offset": { "type": "integer", "minimum": 0 },
+        "volumes_count": { "type": "integer", "minimum": 0 },
+        "volumes_size": { "type": "integer", "minimum": 0 },
+        "layout_variant": {
+          "type": ["integer", "null"],
+          "enum": [1, 2, null],
+          "description": "1 = v30 220-byte layout, 2 = v30 212-byte layout (and assumed v31); null for v17/v23/v26"
+        },
+        "run_count": { "type": "integer", "minimum": 0 },
+        "unknown_string_offset": { "type": "integer", "minimum": 0 },
+        "unknown_string_size": { "type": "integer", "minimum": 0 },
+        "unknown_string": { "type": "string" }
+      }
+    },
+    "run_count": { "type": "integer", "minimum": 0 },
+    "run_times_filetime": { "type": "array", "items": { "type": "integer", "minimum": 1 } },
+    "run_times": {
+      "type": "array",
+      "items": { "type": ["string", "null"] },
+      "description": "UTC ISO 8601, most recent first; not guaranteed strictly descending (tiny forward steps occur in real files)"
+    },
+    "last_run_time": { "type": ["string", "null"] },
+    "metrics": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["trace_chain_index", "trace_chain_entries", "name", "flags", "flags_names", "file_reference"],
+        "properties": {
+          "trace_chain_index": { "type": "integer", "minimum": 0 },
+          "trace_chain_entries": { "type": "integer", "minimum": 0 },
+          "blocks_to_prefetch": { "type": ["integer", "null"] },
+          "name": { "type": ["string", "null"] },
+          "flags": { "type": "integer", "minimum": 0 },
+          "flags_names": { "type": "array", "items": { "type": "string" } },
+          "file_reference": { "type": ["string", "null"], "pattern": "^0x[0-9a-f]{16}$" }
+        }
+      }
+    },
+    "trace_chains": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["next_index", "block_load_count", "flags", "flags_names", "unknown_09", "used_bits", "prefetched_bits"],
+        "properties": {
+          "next_index": { "type": ["integer", "null"] },
+          "block_load_count": { "type": "integer", "minimum": 0 },
+          "flags": { "type": "integer", "minimum": 0 },
+          "flags_names": { "type": "array", "items": { "type": "string" } },
+          "unknown_09": { "type": "integer", "minimum": 0 },
+          "used_bits": { "type": "integer", "minimum": 0 },
+          "prefetched_bits": { "type": "integer", "minimum": 0 }
+        }
+      }
+    },
+    "volumes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["device_path", "volume_creation_filetime", "volume_serial_number", "file_references", "file_references_count", "directory_strings", "directory_strings_count"],
+        "properties": {
+          "device_path": { "type": ["string", "null"] },
+          "volume_creation_filetime": { "type": "integer", "minimum": 0 },
+          "volume_creation_time": { "type": ["string", "null"] },
+          "volume_serial_number": { "type": "string" },
+          "file_references_version": { "type": "integer", "minimum": 0 },
+          "file_references_count": { "type": ["integer", "null"] },
+          "file_references": { "type": "array", "items": { "type": "string", "pattern": "^0x[0-9a-f]{16}$" } },
+          "directory_strings_count": { "type": "integer", "minimum": 0 },
+          "directory_strings": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    },
+    "warnings": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "filename_hash_mismatch",
+          "exe_filename_mismatch",
+          "header_size_mismatch",
+          "run_times_not_descending",
+          "run_count_zero",
+          "no_run_times",
+          "unknown_file_information_layout",
+          "version_31_layout_assumed_from_v30_variant_2",
+          "metrics_offset_unexpected_value",
+          "filename_strings_section_out_of_range",
+          "metrics_array_out_of_range",
+          "metric_name_out_of_range",
+          "trace_chains_array_out_of_range",
+          "volumes_array_out_of_range",
+          "device_path_out_of_range",
+          "file_references_out_of_range",
+          "directory_string_out_of_range",
+          "unknown_string_out_of_range"
+        ]
+      }
+    },
+    "raw_hex": { "type": "string", "description": "raw on-disk bytes as hex (--raw only)" }
+  }
+}

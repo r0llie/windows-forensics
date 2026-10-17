@@ -1,0 +1,95 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "windows-forensics/schemas/usn_report.schema.json",
+  "title": "usn_parse.py machine-readable report",
+  "type": "object",
+  "required": ["tool", "tool_version", "schema_version", "generated_at", "mode", "input", "counts", "skipped_regions", "warnings"],
+  "properties": {
+    "tool": { "const": "usn_parse" },
+    "tool_version": { "type": "string" },
+    "schema_version": { "type": "integer" },
+    "generated_at": { "type": "string" },
+    "mode": { "enum": ["offline", "live-read", "live-enum"] },
+    "input": {
+      "type": "object",
+      "required": ["path", "size_bytes"],
+      "properties": {
+        "path": { "type": ["string", "null"] },
+        "size_bytes": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "journal": {
+      "type": ["object", "null"],
+      "properties": {
+        "journal_id": { "type": "integer" },
+        "first_usn": { "type": "integer" },
+        "next_usn": { "type": "integer" },
+        "lowest_valid_usn": { "type": "integer" },
+        "max_usn": { "type": "integer" },
+        "maximum_size": { "type": "integer" },
+        "allocation_delta": { "type": "integer" },
+        "structure_bytes": { "type": "integer" }
+      }
+    },
+    "counts": {
+      "type": "object",
+      "required": ["records", "emitted", "by_version", "by_reason"],
+      "properties": {
+        "records": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "records parsed before stopping; less than the capture total when a limit stops the scan early (see warnings)"
+        },
+        "emitted": { "type": "integer", "minimum": 0 },
+        "by_version": { "type": "object", "additionalProperties": { "type": "integer" } },
+        "by_reason": { "type": "object", "additionalProperties": { "type": "integer" } }
+      }
+    },
+    "usn_range": {
+      "type": "object",
+      "properties": {
+        "min": { "type": ["integer", "null"] },
+        "max": { "type": ["integer", "null"] }
+      }
+    },
+    "time_range": {
+      "type": "object",
+      "properties": {
+        "min_utc": { "type": ["string", "null"] },
+        "max_utc": { "type": ["string", "null"] }
+      }
+    },
+    "skipped_regions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["offset", "length", "reason"],
+        "properties": {
+          "offset": { "type": "integer", "minimum": 0 },
+          "length": { "type": "integer", "minimum": 1 },
+          "reason": { "enum": ["zero_fill", "no_valid_header", "truncated_tail"] },
+          "context": {
+            "type": "string",
+            "description": "present for live IO-buffer scans: offsets are relative to the kernel buffer"
+          }
+        }
+      }
+    },
+    "usn_offset": {
+      "type": ["object", "null"],
+      "description": "offline only: relation between record USN and byte offset in the capture",
+      "properties": {
+        "distinct_deltas": { "type": "integer", "minimum": 0 },
+        "base_delta": { "type": "integer" },
+        "anomaly_records": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "filters": { "type": "object" },
+    "warnings": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "type": "string" },
+      "description": "e.g. empty_input, no_valid_records, truncated_tail_present, zero_fill_present, usn_offset_inconsistent, capture_not_at_stream_start, enum_mode_experimental, stopped_early_by_limit"
+    }
+  }
+}

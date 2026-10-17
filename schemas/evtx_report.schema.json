@@ -1,0 +1,191 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "windows-forensics/schemas/evtx_report.schema.json",
+  "title": "evtx_parse.py run report",
+  "type": "object",
+  "required": [
+    "tool",
+    "tool_version",
+    "schema_version",
+    "generated_at",
+    "mode",
+    "inputs",
+    "counts",
+    "warning_counts",
+    "notes",
+    "errors",
+    "filters",
+    "warnings"
+  ],
+  "properties": {
+    "tool": {
+      "const": "evtx_parse"
+    },
+    "tool_version": {
+      "type": "string"
+    },
+    "schema_version": {
+      "const": 1
+    },
+    "generated_at": {
+      "type": "string"
+    },
+    "mode": {
+      "const": "offline-xml"
+    },
+    "inputs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["path", "size", "sha256", "encoding"],
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "size": {
+            "type": "integer"
+          },
+          "sha256": {
+            "type": "string"
+          },
+          "encoding": {
+            "type": "string",
+            "description": "text encoding actually used to decode the export (utf-8, utf-8-sig, utf-16, cp1254, cp857, latin-1)"
+          }
+        }
+      }
+    },
+    "counts": {
+      "type": "object",
+      "required": [
+        "files",
+        "parsed",
+        "failed",
+        "events_total",
+        "emitted",
+        "filtered_out",
+        "by_channel",
+        "by_provider",
+        "top_event_ids"
+      ],
+      "properties": {
+        "files": {
+          "type": "integer"
+        },
+        "parsed": {
+          "type": "integer"
+        },
+        "failed": {
+          "type": "integer"
+        },
+        "events_total": {
+          "type": "integer",
+          "description": "events parsed (before filters)"
+        },
+        "emitted": {
+          "type": "integer"
+        },
+        "filtered_out": {
+          "type": "integer"
+        },
+        "by_channel": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer"
+          }
+        },
+        "by_provider": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer"
+          }
+        },
+        "top_event_ids": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["event_id", "count"],
+            "properties": {
+              "event_id": {
+                "type": ["integer", "null"]
+              },
+              "count": {
+                "type": "integer"
+              }
+            }
+          }
+        }
+      }
+    },
+    "warning_counts": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "integer"
+      }
+    },
+    "notes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "errors": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["path", "error"],
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "error": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "filters": {
+      "type": "object",
+      "properties": {
+        "channels": {
+          "type": ["array", "null"],
+          "items": {
+            "type": "string"
+          }
+        },
+        "event_ids": {
+          "type": ["array", "null"],
+          "items": {
+            "type": "integer"
+          }
+        },
+        "provider": {
+          "type": ["string", "null"]
+        },
+        "since": {
+          "type": ["string", "null"]
+        },
+        "until": {
+          "type": ["string", "null"]
+        },
+        "limit": {
+          "type": ["integer", "null"]
+        },
+        "raw": {
+          "type": "boolean"
+        }
+      }
+    },
+    "warnings": {
+      "type": "array",
+      "items": {
+        "enum": [
+          "files_failed_to_parse",
+          "no_records_emitted",
+          "non_utf8_encoding_used",
+          "stopped_early_by_limit"
+        ]
+      }
+    }
+  }
+}

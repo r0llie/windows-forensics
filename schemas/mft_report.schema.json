@@ -1,0 +1,98 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "windows-forensics/schemas/mft_report.schema.json",
+  "title": "mft_parse.py machine-readable report",
+  "type": "object",
+  "required": [
+    "tool",
+    "tool_version",
+    "schema_version",
+    "generated_at",
+    "mode",
+    "input",
+    "record_size",
+    "counts",
+    "timestomp",
+    "skipped_regions",
+    "warnings"
+  ],
+  "properties": {
+    "tool": { "const": "mft_parse" },
+    "tool_version": { "type": "string" },
+    "schema_version": { "type": "integer" },
+    "generated_at": { "type": "string" },
+    "mode": { "enum": ["offline"] },
+    "input": {
+      "type": "object",
+      "required": ["path", "size_bytes"],
+      "properties": {
+        "path": { "type": ["string", "null"] },
+        "size_bytes": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "record_size": { "type": ["integer", "null"], "minimum": 1 },
+    "record_size_detection": {
+      "type": ["object", "null"],
+      "properties": {
+        "magic_ratio": { "type": "number" },
+        "sampled_slots": { "type": "integer" }
+      },
+      "description": "present when the record size was auto-detected"
+    },
+    "counts": {
+      "type": "object",
+      "required": [
+        "slots",
+        "parsed",
+        "in_use",
+        "deleted",
+        "directories",
+        "extension_records",
+        "emitted",
+        "zero_slots",
+        "no_magic_slots",
+        "parse_errors"
+      ],
+      "properties": {
+        "slots": { "type": "integer", "minimum": 0, "description": "full record slots scanned; with --limit this is a lower bound because the scan may stop early (see warnings)" },
+        "parsed": { "type": "integer", "minimum": 0, "description": "slots parsed as FILE records (may be a lower bound with --limit)" },
+        "in_use": { "type": "integer", "minimum": 0 },
+        "deleted": { "type": "integer", "minimum": 0 },
+        "directories": { "type": "integer", "minimum": 0 },
+        "extension_records": { "type": "integer", "minimum": 0 },
+        "emitted": { "type": "integer", "minimum": 0 },
+        "zero_slots": { "type": "integer", "minimum": 0 },
+        "no_magic_slots": { "type": "integer", "minimum": 0 },
+        "parse_errors": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "timestomp": {
+      "type": "object",
+      "required": ["records_with_flags", "by_flag", "note"],
+      "properties": {
+        "records_with_flags": { "type": "integer", "minimum": 0 },
+        "by_flag": { "type": "object", "additionalProperties": { "type": "integer" } },
+        "note": { "type": "string" }
+      }
+    },
+    "skipped_regions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["offset", "length", "reason"],
+        "properties": {
+          "offset": { "type": "integer", "minimum": 0 },
+          "length": { "type": "integer", "minimum": 1 },
+          "reason": { "enum": ["zero_fill", "no_file_magic", "truncated_tail"] }
+        }
+      }
+    },
+    "filters": { "type": "object" },
+    "warnings": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "type": "string" },
+      "description": "e.g. empty_input, no_valid_records, truncated_tail_present, zero_slots_present, no_magic_slots_present, usa_mismatch_records_present, record_parse_errors_present, record_size_auto_detected, stopped_early_by_limit"
+    }
+  }
+}

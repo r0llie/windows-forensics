@@ -1,0 +1,229 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "windows-forensics/schemas/reg.schema.json",
+  "title": "Registry artifact record (one JSON object per JSONL line, reg_parse.py output)",
+  "type": "object",
+  "required": ["tool", "schema_version", "artifact", "hive", "hive_sha256", "key_path", "warnings"],
+  "properties": {
+    "tool": { "const": "reg_parse.py" },
+    "schema_version": { "const": 1 },
+    "artifact": {
+      "enum": [
+        "appcompatcache",
+        "amcache_inventory_application_file",
+        "amcache_inventory_application",
+        "amcache_file",
+        "amcache_programs",
+        "bam",
+        "dam",
+        "userassist",
+        "muicache",
+        "runmru",
+        "typedpaths",
+        "appcompatflags_layers",
+        "pending_file_rename_operations"
+      ]
+    },
+    "hive": { "type": "string", "description": "basename of the hive file the record came from" },
+    "hive_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "key_path": { "type": "string", "description": "key path within the hive (root key name is not part of the path)" },
+    "key_last_write_time": { "type": ["string", "null"], "description": "key last-written FILETIME; a key-level timestamp, not an event time" },
+    "warnings": { "type": "array", "items": { "type": "string" } }
+  },
+  "oneOf": [
+    {
+      "properties": {
+        "artifact": { "const": "appcompatcache" },
+        "control_set": { "type": "string" },
+        "path": { "type": "string" },
+        "last_modification_time": { "type": ["string", "null"] },
+        "entry_signature": { "enum": ["10ts", "00ts"] },
+        "data_size": { "type": ["integer", "null"] },
+        "unknown_flag_1": { "type": "integer" },
+        "unknown_flag_2": { "type": "integer" },
+        "data_hex": { "type": "string", "description": "--raw only (capped)" },
+        "data_hex_truncated": { "type": "boolean" }
+      },
+      "required": ["control_set", "path", "entry_signature", "data_size"]
+    },
+    {
+      "properties": {
+        "artifact": { "const": "amcache_inventory_application_file" },
+        "key_name": { "type": "string", "description": "%NAME%|%IDENTIFIER% key name" },
+        "file_id_raw": { "type": ["string", "null"] },
+        "sha1": { "type": ["string", "null"], "pattern": "^[0-9a-f]{40}$", "description": "FileId with the '0000' type tag stripped; SHA-1 of the first 30 MiB of the file" },
+        "path": { "type": ["string", "null"], "description": "LowerCaseLongPath value" },
+        "name": { "type": ["string", "null"] },
+        "program_id": { "type": ["string", "null"] },
+        "binary_type": { "type": ["string", "null"] },
+        "link_date": { "type": ["string", "null"], "description": "raw LinkDate REG_SZ as stored (MM/DD/YYYY HH:MM:SS CRT format)" },
+        "link_date_ts": { "type": ["string", "null"], "description": "LinkDate normalized to ISO 8601 UTC; null when unparseable or implausible (year outside 1990..2038)" },
+        "size": { "type": ["integer", "null"] },
+        "language": { "type": ["integer", "null"] },
+        "usn": { "type": ["integer", "null"] },
+        "long_path_hash": { "type": ["string", "null"] },
+        "publisher": { "type": ["string", "null"] },
+        "product_name": { "type": ["string", "null"] },
+        "product_version": { "type": ["string", "null"] },
+        "bin_file_version": { "type": ["string", "null"] },
+        "bin_product_version": { "type": ["string", "null"] },
+        "version": { "type": ["string", "null"] },
+        "is_pe_file": { "type": ["integer", "null"] },
+        "is_os_component": { "type": ["integer", "null"] },
+        "other_values": { "type": "object" }
+      },
+      "required": ["key_name"]
+    },
+    {
+      "properties": {
+        "artifact": { "const": "amcache_inventory_application" },
+        "key_name": { "type": "string", "description": "ProgramId key name" },
+        "name": { "type": ["string", "null"] },
+        "publisher": { "type": ["string", "null"] },
+        "version": { "type": ["string", "null"] },
+        "root_dir_path": { "type": ["string", "null"] },
+        "install_date": { "type": ["string", "null"] },
+        "source": { "type": ["string", "null"] },
+        "uninstall_string": { "type": ["string", "null"] },
+        "registry_key_path": { "type": ["string", "null"] },
+        "msi_package_code": { "type": ["string", "null"] },
+        "msi_product_code": { "type": ["string", "null"] },
+        "inventory_last_scan_time": { "type": ["string", "null"], "description": "key-level LastScanTime (REG_QWORD FILETIME), appraiser bookkeeping" },
+        "other_values": { "type": "object" }
+      },
+      "required": ["key_name"]
+    },
+    {
+      "properties": {
+        "artifact": { "const": "amcache_file" },
+        "key_name": { "type": "string" },
+        "volume": { "type": "string" },
+        "identifier": { "type": "string", "description": "%SEQ%0000%MFT-entry-hex%" },
+        "file_reference_sequence": { "type": ["integer", "null"] },
+        "file_reference_mft_entry": { "type": ["integer", "null"] },
+        "sha1": { "type": ["string", "null"], "pattern": "^[0-9a-f]{40}$" },
+        "name": { "type": ["string", "null"] },
+        "company": { "type": ["string", "null"] },
+        "version": { "type": ["string", "null"] },
+        "language": { "type": ["integer", "null"] },
+        "file_size": { "type": ["integer", "null"] },
+        "pe_image_size": { "type": ["integer", "null"] },
+        "checksum": { "type": ["integer", "null"] },
+        "description": { "type": ["string", "null"] },
+        "image_version": { "type": ["string", "null"] },
+        "link_date_ts": { "type": ["string", "null"], "description": "hex value name 'f', POSIX timestamp -> ISO" },
+        "modification_time": { "type": ["string", "null"], "description": "hex value name '11', FILETIME" },
+        "creation_time": { "type": ["string", "null"], "description": "hex value name '12', FILETIME" },
+        "path": { "type": ["string", "null"], "description": "hex value name '15'" },
+        "program_id": { "type": ["string", "null"], "description": "hex value name '100'" },
+        "other_values": { "type": "object" }
+      },
+      "required": ["key_name", "volume", "identifier"]
+    },
+    {
+      "properties": {
+        "artifact": { "const": "amcache_programs" },
+        "key_name": { "type": "string" },
+        "name": { "type": ["string", "null"] },
+        "version": { "type": ["string", "null"] },
+        "publisher": { "type": ["string", "null"] },
+        "source": { "type": ["string", "null"] },
+        "uninstall": { "type": ["string", "null"] },
+        "install_dirs": { "type": ["array", "null"], "items": { "type": "string" } },
+        "install_time_ts": { "type": ["string", "null"], "description": "hex value name 'a', POSIX timestamp -> ISO" },
+        "uninstall_time_ts": { "type": ["string", "null"], "description": "hex value name 'b', POSIX timestamp -> ISO" },
+        "other_values": { "type": "object" }
+      },
+      "required": ["key_name"]
+    },
+    {
+      "properties": {
+        "artifact": { "enum": ["bam", "dam"] },
+        "control_set": { "type": "string" },
+        "user_sid": { "type": "string" },
+        "path": { "type": "string", "description": "value name: \\Device\\... path or UWP package family name" },
+        "value_size": { "type": "integer" },
+        "execution_time": { "type": ["string", "null"], "description": "FILETIME at data offset 0" },
+        "windows_app_flag": { "type": ["integer", "null"], "description": "u32 at data offset 16" },
+        "data_hex": { "type": "string", "description": "--raw only (capped)" }
+      },
+      "required": ["control_set", "user_sid", "path", "value_size"]
+    },
+    {
+      "properties": {
+        "artifact": { "const": "userassist" },
+        "guid": { "type": "string" },
+        "version": { "type": ["integer", "null"], "description": "Version value of the GUID key (3 or 5)" },
+        "value_name_raw": { "type": "string", "description": "ROT13-obfuscated value name as stored" },
+        "name": { "type": "string", "description": "decoded value name" },
+        "kind": { "type": ["string", "null"], "description": "text before ':' (e.g. UEME_RUNPATH), if any" },
+        "target": { "type": ["string", "null"], "description": "text after ':'" },
+        "entry_size": { "type": "integer", "description": "16 for v3 entries, 72 for v5" },
+        "session_id": { "type": ["integer", "null"], "description": "v3 only" },
+        "run_count": { "type": ["integer", "null"] },
+        "focus_count": { "type": ["integer", "null"], "description": "v5 only" },
+        "focus_time_ms": { "type": ["integer", "null"], "description": "v5 only, milliseconds (can be -1)" },
+        "last_run_time": { "type": ["string", "null"] },
+        "data_hex": { "type": "string", "description": "--raw only (capped)" }
+      },
+      "required": ["guid", "version", "value_name_raw", "name", "entry_size"]
+    },
+    {
+      "properties": {
+        "artifact": { "const": "muicache" },
+        "executable_path": { "type": "string", "description": "value name (suffix stripped)" },
+        "value_name_raw": { "type": "string" },
+        "value_name_suffix": { "type": ["string", "null"], "description": "e.g. 'FriendlyAppName' if that suffix was present" },
+        "display_name": { "type": "string", "description": "value data: the friendly name" }
+      },
+      "required": ["executable_path", "display_name", "value_name_raw"]
+    },
+    {
+      "properties": {
+        "artifact": { "const": "runmru" },
+        "command": { "type": "string" },
+        "slot": { "type": "string", "description": "value name (single letter)" },
+        "position": { "type": ["integer", "null"], "description": "index in MRUList; 0 = most recent; null if not referenced" },
+        "is_most_recent": { "type": "boolean" }
+      },
+      "required": ["command", "slot", "is_most_recent"]
+    },
+    {
+      "properties": {
+        "artifact": { "const": "typedpaths" },
+        "slot": { "type": "string", "description": "value name (url<N>)" },
+        "path": { "type": "string" },
+        "position": { "type": "integer" }
+      },
+      "required": ["slot", "path", "position"]
+    },
+    {
+      "properties": {
+        "artifact": { "const": "appcompatflags_layers" },
+        "scope": { "enum": ["user", "user_wow64", "machine", "machine_wow64"] },
+        "executable_path": { "type": "string", "description": "value name" },
+        "layers": { "type": "string", "description": "value data, e.g. '~ RUNASADMIN'" },
+        "layer_flags": { "type": "array", "items": { "type": "string" } },
+        "run_as_admin": { "type": "boolean", "description": "RUNASADMIN present (privilege-interest signal, not proof of elevation)" }
+      },
+      "required": ["scope", "executable_path", "layers", "layer_flags", "run_as_admin"]
+    },
+    {
+      "properties": {
+        "artifact": { "const": "pending_file_rename_operations" },
+        "control_set": { "type": "string" },
+        "source": { "type": "string" },
+        "source_display": { "type": "string", "description": "source with a leading \\??\\ stripped" },
+        "operation": { "enum": ["rename", "delete", "malformed"] },
+        "destination": {
+          "type": ["string", "null"],
+          "description": "null for delete (empty destination string) and malformed entries"
+        },
+        "destination_display": { "type": "string" },
+        "value_size": { "type": "integer" },
+        "data_hex": { "type": "string", "description": "--raw only (capped)" }
+      },
+      "required": ["control_set", "source", "operation"]
+    }
+  ]
+}

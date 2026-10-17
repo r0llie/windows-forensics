@@ -1,0 +1,128 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "windows-forensics/schemas/evtx.schema.json",
+  "title": "Event log record (one JSON object per JSONL line, evtx_parse.py output)",
+  "type": "object",
+  "required": [
+    "tool",
+    "schema_version",
+    "artifact",
+    "source_file",
+    "source_sha256",
+    "channel",
+    "provider",
+    "event_id",
+    "level",
+    "time_created",
+    "record_id",
+    "computer",
+    "event_data",
+    "warnings"
+  ],
+  "properties": {
+    "tool": {
+      "const": "evtx_parse.py"
+    },
+    "schema_version": {
+      "const": 1
+    },
+    "artifact": {
+      "const": "eventlog"
+    },
+    "source_file": {
+      "type": "string",
+      "description": "basename of the parsed XML export file"
+    },
+    "source_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "channel": {
+      "type": ["string", "null"],
+      "description": "System/Channel, e.g. Security, System, Microsoft-Windows-Windows Defender/Operational"
+    },
+    "provider": {
+      "type": ["string", "null"],
+      "description": "System/Provider@Name (canonical provider name, not the friendly GUI name)"
+    },
+    "provider_guid": {
+      "type": ["string", "null"]
+    },
+    "event_id": {
+      "type": ["integer", "null"]
+    },
+    "event_id_qualifiers": {
+      "type": ["integer", "null"],
+      "description": "rare classic-provider EventID Qualifiers attribute"
+    },
+    "version": {
+      "type": ["integer", "null"]
+    },
+    "level": {
+      "type": ["integer", "null"],
+      "description": "0 LogAlways, 1 Critical, 2 Error, 3 Warning, 4 Information, 5 Verbose"
+    },
+    "level_name": {
+      "type": ["string", "null"]
+    },
+    "task": {
+      "type": ["integer", "null"]
+    },
+    "opcode": {
+      "type": ["integer", "null"]
+    },
+    "keywords": {
+      "type": ["string", "null"],
+      "description": "raw Keywords text as it appears in XML (hex string such as 0x8020000000000000)"
+    },
+    "time_created": {
+      "type": ["string", "null"],
+      "description": "TimeCreated/@SystemTime normalized to microsecond ISO 8601 UTC (7th 100-ns digit dropped); null if absent/unparseable"
+    },
+    "record_id": {
+      "type": ["integer", "null"],
+      "description": "per-channel EventRecordID; restarts low after a log clear"
+    },
+    "computer": {
+      "type": ["string", "null"]
+    },
+    "security_user_id": {
+      "type": ["string", "null"],
+      "description": "System/Security/@UserID — account context that emitted the event"
+    },
+    "execution_process_id": {
+      "type": ["integer", "null"],
+      "description": "logging thread's PID (hex in XML, decoded here) — NOT the subject process"
+    },
+    "execution_thread_id": {
+      "type": ["integer", "null"]
+    },
+    "activity_id": {
+      "type": ["string", "null"]
+    },
+    "related_activity_id": {
+      "type": ["string", "null"]
+    },
+    "event_data": {
+      "type": "object",
+      "description": "named <Data Name=...> values in document order; unnamed entries keyed Data[<index>]; duplicate names suffixed #2, #3, ...; <Binary> payloads keyed 'Binary' (raw hex string as stored)",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "user_data": {
+      "type": ["object", "null"],
+      "description": "provider-specific nested <UserData> XML flattened to an object; XML attributes keyed @name; repeated elements become arrays"
+    },
+    "raw_xml": {
+      "type": "string",
+      "description": "only present with --raw; the event re-serialized by the parser (namespace prefixes may be rewritten, whitespace normalized), capped at 65536 characters"
+    },
+    "warnings": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}

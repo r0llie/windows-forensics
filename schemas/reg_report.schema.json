@@ -1,0 +1,103 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "windows-forensics/schemas/reg_report.schema.json",
+  "title": "reg_parse.py JSON report (--report output)",
+  "type": "object",
+  "required": [
+    "tool",
+    "tool_version",
+    "schema_version",
+    "generated_at",
+    "mode",
+    "inputs",
+    "counts",
+    "warning_counts",
+    "unknown_value_types",
+    "notes",
+    "errors",
+    "filters",
+    "warnings"
+  ],
+  "properties": {
+    "tool": { "const": "reg_parse" },
+    "tool_version": { "type": "string" },
+    "schema_version": { "const": 1 },
+    "generated_at": { "type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$" },
+    "mode": { "const": "offline" },
+    "inputs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["path", "size", "sha256"],
+        "properties": {
+          "path": { "type": "string", "description": "basename of the hive file" },
+          "size": { "type": "integer", "minimum": 1 },
+          "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+        }
+      }
+    },
+    "counts": {
+      "type": "object",
+      "required": ["hives", "parsed", "failed", "emitted", "by_artifact", "total_cell_bytes_read"],
+      "properties": {
+        "hives": { "type": "integer", "minimum": 0 },
+        "parsed": { "type": "integer", "minimum": 0 },
+        "failed": { "type": "integer", "minimum": 0 },
+        "emitted": { "type": "integer", "minimum": 0 },
+        "by_artifact": {
+          "type": "object",
+          "additionalProperties": { "type": "integer", "minimum": 0 }
+        },
+        "total_cell_bytes_read": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "warning_counts": {
+      "type": "object",
+      "additionalProperties": { "type": "integer", "minimum": 0 }
+    },
+    "unknown_value_types": {
+      "type": "object",
+      "additionalProperties": { "type": "integer", "minimum": 0 }
+    },
+    "notes": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "errors": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["error"],
+        "properties": {
+          "path": { "type": "string" },
+          "hive": { "type": "string" },
+          "artifact": { "type": "string" },
+          "key_path": { "type": "string" },
+          "error": { "type": "string" }
+        }
+      }
+    },
+    "filters": {
+      "type": "object",
+      "required": ["artifacts", "limit", "raw"],
+      "properties": {
+        "artifacts": { "type": "array", "items": { "type": "string" } },
+        "limit": { "type": ["integer", "null"] },
+        "raw": { "type": "boolean" }
+      }
+    },
+    "warnings": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "hives_failed_to_parse",
+          "no_records_emitted",
+          "dirty_hives_present",
+          "unknown_value_type_present",
+          "stopped_early_by_limit"
+        ]
+      }
+    }
+  }
+}

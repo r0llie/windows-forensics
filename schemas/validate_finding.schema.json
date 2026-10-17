@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "windows-forensics/schemas/validate_finding.schema.json",
+  "title": "Cross-validation finding (one JSON object per JSONL line, validate.py output)",
+  "type": "object",
+  "required": [
+    "rule",
+    "name",
+    "severity",
+    "title",
+    "count",
+    "examples",
+    "rationale"
+  ],
+  "properties": {
+    "rule": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 10,
+      "description": "rule number from references/timeline-methodology.md section 5"
+    },
+    "name": { "type": "string" },
+    "severity": { "type": "string", "enum": ["info", "low", "medium", "high"] },
+    "title": { "type": "string" },
+    "count": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "exact number of items found; examples are capped separately"
+    },
+    "examples": {
+      "type": "array",
+      "items": { "type": "object" },
+      "description": "capped, deterministic sample of the flagged items, each with time and ref where applicable"
+    },
+    "rationale": {
+      "type": "string",
+      "description": "why this rule exists and how to read the finding (card citation)"
+    },
+    "coverage_note": { "type": "string" },
+    "by_reason": { "type": "object", "additionalProperties": { "type": "integer" } },
+    "by_parser_flag_observation": { "type": "object", "additionalProperties": { "type": "integer" } },
+    "log_clear_events": { "type": "integer", "minimum": 0 },
+    "missing_record_ids": { "type": "integer", "minimum": 0 },
+    "discontinuities": { "type": "integer", "minimum": 0 },
+    "channels": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["channel", "records", "id_range", "missing_ids"]
+      }
+    },
+    "uncorroborated_clusters": { "type": "integer", "minimum": 0 }
+  }
+}
